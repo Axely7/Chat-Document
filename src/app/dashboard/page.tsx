@@ -1,12 +1,17 @@
 import React from "react";
 // @ts-ignore-next-line
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { redirect } from "next/navigation";
 
 const Dashboard = async () => {
   const { getUser } = await getKindeServerSession();
   const user = await getUser();
 
-  return <div>{user.email}</div>;
+  if (!user || !user.id) redirect("/auth-callback?origin=dashboard");
+
+  
+
+  return <div>{user?.email}</div>;
 };
 
 export default Dashboard;
