@@ -1,4 +1,4 @@
-import { router, publicProcedure } from './trpc';
+import { router, publicProcedure, privateProcedure } from './trpc';
 // @ts-ignore-next-line
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { TRPCError } from '@trpc/server';
@@ -25,7 +25,17 @@ export const appRouter = router({
     }
 
     return {success: true}
+  }),
+
+  getUserFiles: privateProcedure.query(async({ctx}) => {
+    const {userId} = ctx
+
+    return await db.file.findMany({where: {
+      userId
+    }})
   })
+
+
 });
 
 // Export type router type signature,
