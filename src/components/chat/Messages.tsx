@@ -3,6 +3,7 @@ import React from "react";
 import { INFINITE_QUERY_LIMIT } from "../../config/infinite-query";
 import { Loader2, MessageSquare } from "lucide-react";
 import Skeleton from "react-loading-skeleton";
+import { Message } from "./Message";
 
 interface MessagesProps {
   fileId: string;
@@ -53,8 +54,21 @@ export const Messages = ({ fileId }: MessagesProps) => {
             combineMessages[i]?.isUserMessage;
 
           if (i === combineMessages.length - 1) {
-            return <Message />;
-          } else return <Message />;
+            return (
+              <Message
+                message={message}
+                isNextMessageSamePerson={isNextMessageSamePerson}
+                key={message.id}
+              />
+            );
+          } else
+            return (
+              <Message
+                message={message}
+                isNextMessageSamePerson={isNextMessageSamePerson}
+                key={message.id}
+              />
+            );
         })
       ) : isLoading ? (
         <div className="w-full flex flex-col gap-2">

@@ -1,6 +1,8 @@
-import React, { ReactNode, createContext, useState } from "react";
+import React, { ReactNode, createContext, useRef, useState } from "react";
 import { useToast } from "../ui/use-toast";
 import { useMutation } from "@tanstack/react-query";
+import { trpc } from "../../app/_trpc/client";
+import { INFINITE_QUERY_LIMIT } from "../../config/infinite-query";
 
 type StreamResponse = {
   addMessage: () => void;
@@ -25,7 +27,11 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
   const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const utils = trpc.useContext();
+
   const { toast } = useToast();
+
+  const backupMessage = useRef("");
 
   const { mutate: sendMessage } = useMutation({
     mutationFn: async ({ message }: { message: string }) => {
@@ -42,6 +48,51 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
       }
 
       return response.body;
+    },
+    onMutate: async () => {
+      backupMessage.current = message;
+      setMessage("");
+
+      await utils.getFileMessages.cancel();
+      const previousMessages = utils.getFileMessages.getInfiniteData();
+
+      utils.getFileMessages.setInfiniteData(
+        {
+          fileId,
+          limit: INFINITE_QUERY_LIMIT,
+        },
+        (old) => {
+          if (!old) {
+            return {
+              pages: [],
+              pageParams: [],
+            };
+          }
+
+          let newPages = [...old.pages];
+
+          let latestPage = newPages[0]!;
+
+          latestPage.messages = [
+            {
+              createdAt: new Date().toDateString(),
+              id: crypto.randomUUID(),
+              text: message,
+              isUserMessage: true,
+            },
+            ...latestPage.messages,
+          ];
+
+          newPages[0] = latestPage;
+
+          return {
+            ...old,
+            pages: newPages,
+          };
+        }
+      );
+
+      setIsLoading(true);
     },
   });
 
